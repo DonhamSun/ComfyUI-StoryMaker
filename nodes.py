@@ -5,22 +5,28 @@ import numpy as np
 from PIL import Image
 import cv2
 from diffusers import UniPCMultistepScheduler
+from torchvision.transforms import ToPILImage
+from torchvision.transforms import ToTensor
+
 
 # 假设这个文件位于 ComfyUI/custom_nodes/storymaker_nodes.py
 STORYMAKER_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'StoryMaker')
 
 # 默认配置
 DEFAULT_CONFIG = {
-    "face_adapter_path": os.path.join(STORYMAKER_ROOT, "checkpoints/mask.bin") ,
-    "image_encoder_path": "laion/CLIP-ViT-H-14-laion2B-s32B-b79K",
-    "base_model_path": "huaquan/YamerMIX_v11"
+    "face_adapter_path": os.path.join(STORYMAKER_ROOT, "checkpoints/mask.bin"),
+    "image_encoder_path": os.path.join(STORYMAKER_ROOT, "models/CLIP-ViT-H-14-laion2B-s32B-b79K"),
+    "base_model_path": os.path.join(STORYMAKER_ROOT, "models/YamerMIX_v11")
 }
+
 
 def load_config():
     return DEFAULT_CONFIG
 
+
 # 加载配置
 CONFIG = load_config()
+
 
 class StoryMakerSharedResources:
     def __init__(self):
@@ -31,8 +37,8 @@ class StoryMakerSharedResources:
         from insightface.app import FaceAnalysis
         from .StoryMaker.pipeline_sdxl_storymaker import StableDiffusionXLStoryMakerPipeline
         if self.app is None:
-            
-            self.app = FaceAnalysis(name='buffalo_l', root=STORYMAKER_ROOT, providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+            self.app = FaceAnalysis(name='buffalo_l', root=STORYMAKER_ROOT,
+                                    providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
             self.app.prepare(ctx_id=0, det_size=(640, 640))
 
         if self.pipe is None:
@@ -41,15 +47,17 @@ class StoryMakerSharedResources:
                 torch_dtype=torch.float16,
             )
             self.pipe.cuda()
-            self.pipe.load_storymaker_adapter(CONFIG['image_encoder_path'], CONFIG['face_adapter_path'], scale=0.8, lora_scale=0.8)
+            self.pipe.load_storymaker_adapter(CONFIG['image_encoder_path'], CONFIG['face_adapter_path'], scale=0.8,
+                                              lora_scale=0.8)
             self.pipe.scheduler = UniPCMultistepScheduler.from_config(self.pipe.scheduler.config)
 
     def deinitialize(self):
         self.pipe = None
         self.app = None
-  
+
 
 shared_resources = StoryMakerSharedResources()
+
 
 class StoryMakerBaseNode:
     def __init__(self):
@@ -60,29 +68,10 @@ class StoryMakerBaseNode:
             # 确保我们处理的是 4D 张量 (batch, height, width, channels)
             if image.dim() != 4:
                 raise ValueError(f"预期 4D 张量，但得到 {image.dim()}D 张量")
-            
-            # 取第一个批次的图像
-            image = image[0]  # 现在 shape 是 (height, width, channels)
-            
-            # 确保图像在 CPU 上
-            image = image.cpu()
-            
-            # 检查是否需要将值范围从 [0, 1] 转换到 [0, 255]
-            if image.dtype == torch.float32 or image.dtype == torch.float16:
-                image = (image * 255).byte()
-            else:
-                image = image.byte()
-            
-            # 如果是单通道图像，转换为三通道
-            if image.shape[-1] == 1:
-                image = image.repeat(1, 1, 3)
-            
-            # 转换为 numpy 数组
-            image_np = image.numpy()
-            
-            # 创建 PIL 图像
-            pil_image = Image.fromarray(image_np, mode='RGB')
 
+            image = image.squeeze(0).permute(2, 0, 1)  # Remove batch dimension and permute
+
+            pil_image = ToPILImage()(image)  # Convert the tensor to a PIL Image
         elif isinstance(image, str):
             pil_image = Image.open(image)
         elif isinstance(image, Image.Image):
@@ -98,11 +87,10 @@ class StoryMakerBaseNode:
         # pil_image.convert('RGB').save('test222.jpg')
         return pil_image.convert('RGB')
 
-    
-
     def get_face_info(self, image):
         face_info = self.shared.app.get(cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR))
-        return sorted(face_info, key=lambda x:(x['bbox'][2]-x['bbox'][0])*(x['bbox'][3]-x['bbox'][1]))[-1]
+        return sorted(face_info, key=lambda x: (x['bbox'][2] - x['bbox'][0]) * (x['bbox'][3] - x['bbox'][1]))[-1]
+
 
 class SinglePortraitNode(StoryMakerBaseNode):
     @classmethod
@@ -137,12 +125,12 @@ class SinglePortraitNode(StoryMakerBaseNode):
             guidance_scale=7.5,
             height=1280, width=960,
             generator=generator,
-        )
-    
-        # ).images[0]
-        output = output.permute(0, 2, 3, 1)
+        ).images[0]
+        processed_tensor = ToTensor()(output)  # Convert the PIL Image back to a tensor
+        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3, 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
         self.shared.deinitialize()
-        return (output,)
+        return processed_tensor,
+
 
 class TwoPortraitNode(StoryMakerBaseNode):
     @classmethod
@@ -183,10 +171,12 @@ class TwoPortraitNode(StoryMakerBaseNode):
             guidance_scale=7.5,
             height=1280, width=960,
             generator=generator,
-        )   
-        output = output.permute(0, 2, 3, 1)
+        ).images[0]
+        processed_tensor = ToTensor()(output)  # Convert the PIL Image back to a tensor
+        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3, 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
         self.shared.deinitialize()
-        return (output,)
+        return processed_tensor,
+
 
 class SwapClothNode(StoryMakerBaseNode):
     @classmethod
@@ -223,10 +213,12 @@ class SwapClothNode(StoryMakerBaseNode):
             guidance_scale=7.5,
             height=1280, width=960,
             generator=generator,
-        )
+        ).images[0]
         self.shared.deinitialize()
-        output = output.permute(0, 2, 3, 1)
-        return (output,)
+        processed_tensor = ToTensor()(output)  # Convert the PIL Image back to a tensor
+        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3, 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
+        return processed_tensor,
+
 
 NODE_CLASS_MAPPINGS = {
     "StoryMakerSinglePortraitNode": SinglePortraitNode,

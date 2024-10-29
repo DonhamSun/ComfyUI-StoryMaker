@@ -42,12 +42,12 @@ from diffusers.utils.import_utils import is_xformers_available
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 from insightface.utils import face_align
 
-from .ip_adapter.resampler import Resampler
-from .ip_adapter.utils import is_torch2_available
-from .ip_adapter.ip_adapter_faceid import faceid_plus
+from ip_adapter.resampler import Resampler
+from ip_adapter.utils import is_torch2_available
+from ip_adapter.ip_adapter_faceid import faceid_plus
 
-from .ip_adapter.attention_processor import IPAttnProcessor2_0 as IPAttnProcessor, AttnProcessor2_0 as AttnProcessor
-from .ip_adapter.attention_processor_faceid import LoRAIPAttnProcessor2_0 as LoRAIPAttnProcessor, LoRAAttnProcessor2_0 as LoRAAttnProcessor
+from ip_adapter.attention_processor import IPAttnProcessor2_0 as IPAttnProcessor, AttnProcessor2_0 as AttnProcessor
+from ip_adapter.attention_processor_faceid import LoRAIPAttnProcessor2_0 as LoRAIPAttnProcessor, LoRAAttnProcessor2_0 as LoRAAttnProcessor
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -427,7 +427,7 @@ class StableDiffusionXLStoryMakerPipeline(StableDiffusionXLPipeline):
             callback_on_step_end_tensor_inputs (`List`, *optional*):
                 The list of tensor inputs for the `callback_on_step_end` function. The tensors specified in the list
                 will be passed as `callback_kwargs` argument. You will only be able to include variables listed in the
-                `._callback_tensor_inputs` attribute of your pipeine class.
+                `._callback_tensor_inputs` attribute of your pipeline class.
 
         Examples:
 
@@ -669,12 +669,12 @@ class StableDiffusionXLStoryMakerPipeline(StableDiffusionXLPipeline):
             if self.watermark is not None:
                 image = self.watermark.apply_watermark(image)
 
-            # image = self.image_processor.postprocess(image, output_type=output_type)
+            image = self.image_processor.postprocess(image, output_type=output_type)
 
         # Offload all models
         self.maybe_free_model_hooks()
 
         if not return_dict:
             return (image,)
-        return image
-        # return StableDiffusionXLPipelineOutput(images=image)
+
+        return StableDiffusionXLPipelineOutput(images=image)

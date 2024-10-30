@@ -99,8 +99,8 @@ class SinglePortraitNode(StoryMakerBaseNode):
             "required": {
                 "image": ("IMAGE",),
                 "mask_image": ("IMAGE",),
-                "prompt": ("STRING", {"multiline": True}),
-                "negative_prompt": ("STRING", {"multiline": True}),
+                "prompt": ("CONDITIONING",),
+                "negative_prompt": ("CONDITIONING", ),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
         }

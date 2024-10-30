@@ -9,8 +9,9 @@ from torchvision.transforms import ToPILImage
 from torchvision.transforms import ToTensor
 
 
-
-STORYMAKER_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'StoryMaker')
+NODE_ROOT = os.path.dirname(os.path.abspath(__file__))
+position = NODE_ROOT.find("custom_nodes")
+STORYMAKER_ROOT = os.path.join(NODE_ROOT[:position], 'models/StoryMaker')
 
 # 默认配置
 DEFAULT_CONFIG = {

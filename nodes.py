@@ -9,7 +9,7 @@ from torchvision.transforms import ToPILImage
 from torchvision.transforms import ToTensor
 
 
-# 假设这个文件位于 ComfyUI/custom_nodes/storymaker_nodes.py
+
 STORYMAKER_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'StoryMaker')
 
 # 默认配置

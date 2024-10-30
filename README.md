@@ -9,6 +9,7 @@
 
 下载[buffalo_l](https://drive.google.com/file/d/1qXsQJ8ZT42_xSmWIYy85IcidpiZudOCB/view),放到StoryMaker/models下面
 目录结构
+```angular2html
  --StoryMaker
      |--checkpoints
            |--mask.bin
@@ -16,4 +17,6 @@
           |--YamerMIX_v11
           |--CLIP-ViT-H-14-laion2B-s32B-b79K
           |--buffalo_l
+```
+
       

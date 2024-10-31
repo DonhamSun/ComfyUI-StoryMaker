@@ -7,6 +7,8 @@ import cv2
 from diffusers import UniPCMultistepScheduler
 from torchvision.transforms import ToPILImage
 from torchvision.transforms import ToTensor
+import comfy.sample
+import comfy.model_management
 
 NODE_ROOT = os.path.dirname(os.path.abspath(__file__))
 position = NODE_ROOT.find("custom_nodes")
@@ -104,7 +106,7 @@ class SinglePortraitNode(StoryMakerBaseNode):
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "height": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "width": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "latent_image": ("LATENT",)
+                "latent": ("LATENT",)
             }
         }
 
@@ -112,11 +114,24 @@ class SinglePortraitNode(StoryMakerBaseNode):
     FUNCTION = "generate"
     CATEGORY = "StoryMaker"
 
-    def generate(self, image, mask_image, prompt, negative_prompt, seed, height, width, latent_image):
+    def generate(self, image, mask_image, prompt, negative_prompt, seed, height, width, latent):
         self.shared.initialize()
         image = self.preprocess_image(image)
         mask_image = self.preprocess_image(mask_image)
         face_info = self.get_face_info(image)
+
+        device = comfy.model_management.get_torch_device()
+        latent_image = latent["samples"]
+        batch_inds = latent["batch_index"] if "batch_index" in latent else None
+        noise = comfy.sample.prepare_noise(latent_image, seed, batch_inds)
+        noise_mask = None
+        if "noise_mask" in latent:
+            noise_mask = latent["noise_mask"]
+        if noise_mask is not None:
+            noise_mask = comfy.sample.prepare_mask(noise_mask, noise.shape, device)
+
+        noise = noise.to(device)
+        latent_image = latent_image.to(device)
 
         generator = torch.Generator(device='cuda').manual_seed(seed)
         output = self.shared.pipe(

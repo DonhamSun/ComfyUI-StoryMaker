@@ -8,7 +8,6 @@ from diffusers import UniPCMultistepScheduler
 from torchvision.transforms import ToPILImage
 from torchvision.transforms import ToTensor
 
-
 NODE_ROOT = os.path.dirname(os.path.abspath(__file__))
 position = NODE_ROOT.find("custom_nodes")
 STORYMAKER_ROOT = os.path.join(NODE_ROOT[:position], 'models/StoryMaker')
@@ -103,6 +102,9 @@ class SinglePortraitNode(StoryMakerBaseNode):
                 "prompt": ("STRING", {"multiline": True}),
                 "negative_prompt": ("STRING", {"multiline": True}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "height": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "width": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "latent_image": ("LATENT",)
             }
         }
 
@@ -110,7 +112,7 @@ class SinglePortraitNode(StoryMakerBaseNode):
     FUNCTION = "generate"
     CATEGORY = "StoryMaker"
 
-    def generate(self, image, mask_image, prompt, negative_prompt, seed):
+    def generate(self, image, mask_image, prompt, negative_prompt, seed, height, width, latent_image):
         self.shared.initialize()
         image = self.preprocess_image(image)
         mask_image = self.preprocess_image(mask_image)
@@ -124,11 +126,13 @@ class SinglePortraitNode(StoryMakerBaseNode):
             ip_adapter_scale=0.8, lora_scale=0.8,
             num_inference_steps=25,
             guidance_scale=7.5,
-            height=1280, width=960,
+            height=height, width=width,
             generator=generator,
+            latents=latent_image
         ).images[0]
         processed_tensor = ToTensor()(output)  # Convert the PIL Image back to a tensor
-        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3, 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
+        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3,
+                                                                 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
         self.shared.deinitialize()
         return processed_tensor,
 
@@ -174,7 +178,8 @@ class TwoPortraitNode(StoryMakerBaseNode):
             generator=generator,
         ).images[0]
         processed_tensor = ToTensor()(output)  # Convert the PIL Image back to a tensor
-        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3, 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
+        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3,
+                                                                 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
         self.shared.deinitialize()
         return processed_tensor,
 
@@ -217,7 +222,8 @@ class SwapClothNode(StoryMakerBaseNode):
         ).images[0]
         self.shared.deinitialize()
         processed_tensor = ToTensor()(output)  # Convert the PIL Image back to a tensor
-        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3, 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
+        processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3,
+                                                                 1)  # Put back the batch dimension and permute back to [batch_size, height, width, channels]
         return processed_tensor,
 
 

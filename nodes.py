@@ -108,7 +108,9 @@ class SinglePortraitNode(StoryMakerBaseNode):
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "height": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "width": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "latent": ("LATENT", {"default": None})
+            },
+            "optional":{
+                "latent": ("LATENT",)
             }
         }
 
@@ -122,18 +124,10 @@ class SinglePortraitNode(StoryMakerBaseNode):
         mask_image = self.preprocess_image(mask_image)
         face_info = self.get_face_info(image)
 
-        device = comfy.model_management.get_torch_device()
-        latent_image = latent["samples"]
-        batch_inds = latent["batch_index"] if "batch_index" in latent else None
-        noise = comfy.sample.prepare_noise(latent_image, seed, batch_inds)
-        noise_mask = None
-        if "noise_mask" in latent:
-            noise_mask = latent["noise_mask"]
-        if noise_mask is not None:
-            noise_mask = comfy.sample.prepare_mask(noise_mask, noise.shape, device)
-
-        noise = noise.to(device)
-        latent_image = latent_image.half()
+        latent_image = None
+        if latent is not None:
+            latent_image = latent["samples"]
+            latent_image = latent_image.half()
 
         generator = torch.Generator(device='cuda').manual_seed(seed)
         output = self.shared.pipe(

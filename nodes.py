@@ -133,7 +133,7 @@ class SinglePortraitNode(StoryMakerBaseNode):
             noise_mask = comfy.sample.prepare_mask(noise_mask, noise.shape, device)
 
         noise = noise.to(device)
-        latent_image = latent_image.to(torch.float32)
+        latent_image = latent_image.to(torch.float64)
 
         generator = torch.Generator(device='cuda').manual_seed(seed)
         output = self.shared.pipe(

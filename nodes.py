@@ -23,6 +23,7 @@ DEFAULT_CONFIG = {
 
 os.environ["COMMANDLINE_ARGS"] = '--precision full --no-half'
 
+
 def load_config():
     return DEFAULT_CONFIG
 
@@ -107,7 +108,7 @@ class SinglePortraitNode(StoryMakerBaseNode):
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "height": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "width": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-                "latent": ("LATENT",)
+                "latent": ("LATENT", {"default": None})
             }
         }
 
@@ -120,7 +121,6 @@ class SinglePortraitNode(StoryMakerBaseNode):
         image = self.preprocess_image(image)
         mask_image = self.preprocess_image(mask_image)
         face_info = self.get_face_info(image)
-
 
         device = comfy.model_management.get_torch_device()
         latent_image = latent["samples"]

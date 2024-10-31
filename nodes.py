@@ -128,7 +128,7 @@ class SinglePortraitNode(StoryMakerBaseNode):
             guidance_scale=7.5,
             height=height, width=width,
             generator=generator,
-            latents=ToTensor()(latent_image)
+            latents=latent_image["samples"]
         ).images[0]
         processed_tensor = ToTensor()(output)  # Convert the PIL Image back to a tensor
         processed_tensor = processed_tensor.unsqueeze(0).permute(0, 2, 3,

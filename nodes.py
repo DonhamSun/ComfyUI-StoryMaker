@@ -109,7 +109,7 @@ class SinglePortraitNode(StoryMakerBaseNode):
                 "height": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "width": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             },
-            "optional":{
+            "optional": {
                 "latent": ("LATENT",)
             }
         }
@@ -118,7 +118,7 @@ class SinglePortraitNode(StoryMakerBaseNode):
     FUNCTION = "generate"
     CATEGORY = "StoryMaker"
 
-    def generate(self, image, mask_image, prompt, negative_prompt, seed, height, width, latent):
+    def generate(self, image, mask_image, prompt, negative_prompt, seed, height, width, latent=None):
         self.shared.initialize()
         image = self.preprocess_image(image)
         mask_image = self.preprocess_image(mask_image)

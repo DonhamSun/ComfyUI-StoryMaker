@@ -21,6 +21,7 @@ DEFAULT_CONFIG = {
     "base_model_path": os.path.join(STORYMAKER_ROOT, "models/YamerMIX_v11")
 }
 
+os.environ["COMMANDLINE_ARGS"] = '--precision full --no-half'
 
 def load_config():
     return DEFAULT_CONFIG
@@ -119,6 +120,7 @@ class SinglePortraitNode(StoryMakerBaseNode):
         image = self.preprocess_image(image)
         mask_image = self.preprocess_image(mask_image)
         face_info = self.get_face_info(image)
+
 
         device = comfy.model_management.get_torch_device()
         latent_image = latent["samples"]

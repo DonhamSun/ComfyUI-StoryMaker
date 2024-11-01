@@ -108,6 +108,9 @@ class SinglePortraitNode(StoryMakerBaseNode):
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "height": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
                 "width": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "ip_adapter_scale": ("FLOAT", {"default": 0.8, "min": -100.0, "max": 100.0, "step": 0.1}),
+                "lora_scale": ("FLOAT", {"default": 0.8, "min": -100.0, "max": 100.0, "step": 0.1}),
+                "guidance_scale": ("FLOAT", {"default": 7.5, "min": -100.0, "max": 100.0, "step": 0.1}),
             },
             "optional": {
                 "latent": ("LATENT",)
@@ -118,7 +121,8 @@ class SinglePortraitNode(StoryMakerBaseNode):
     FUNCTION = "generate"
     CATEGORY = "StoryMaker"
 
-    def generate(self, image, mask_image, prompt, negative_prompt, seed, height, width, latent=None):
+    def generate(self, image, mask_image, prompt, negative_prompt, seed, height, width, ip_adapter_scale, lora_scale,
+                 guidance_scale, latent=None):
         self.shared.initialize()
         image = self.preprocess_image(image)
         mask_image = self.preprocess_image(mask_image)
@@ -134,9 +138,9 @@ class SinglePortraitNode(StoryMakerBaseNode):
             image=image, mask_image=mask_image, face_info=face_info,
             prompt=prompt,
             negative_prompt=negative_prompt,
-            ip_adapter_scale=0.8, lora_scale=0.8,
+            ip_adapter_scale=ip_adapter_scale, lora_scale=lora_scale,
             num_inference_steps=25,
-            guidance_scale=7.5,
+            guidance_scale=guidance_scale,
             height=height, width=width,
             generator=generator,
             latents=latent_image

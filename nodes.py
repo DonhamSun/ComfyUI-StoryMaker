@@ -210,6 +210,8 @@ class SwapClothNode(StoryMakerBaseNode):
                 "prompt": ("STRING", {"multiline": True}),
                 "negative_prompt": ("STRING", {"multiline": True}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "height": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "width": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
             }
         }
 
@@ -217,7 +219,7 @@ class SwapClothNode(StoryMakerBaseNode):
     FUNCTION = "generate"
     CATEGORY = "StoryMaker"
 
-    def generate(self, image, mask_image, cloth, prompt, negative_prompt, seed):
+    def generate(self, image, mask_image, cloth, prompt, negative_prompt, seed, height, width):
         self.shared.initialize()
         image = self.preprocess_image(image)
         mask_image = self.preprocess_image(mask_image)
@@ -232,7 +234,7 @@ class SwapClothNode(StoryMakerBaseNode):
             ip_adapter_scale=0.8, lora_scale=0.8,
             num_inference_steps=25,
             guidance_scale=7.5,
-            height=1280, width=960,
+            height=height, width=width,
             generator=generator,
         ).images[0]
         self.shared.deinitialize()
